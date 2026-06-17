@@ -2,11 +2,19 @@ site_name: StarlingX Documentation
 nav:
   - Home: index.md
   - Introduction:
-      - "What is StarlingX": introduction/what-is-starlingx.md
-      - History: introduction/history.md
-      - "Why StarlingX": introduction/why-starlingx.md
-  - "Chương 1: Giới thiệu & Kiến trúc": 01-architecture.md
-  - "Chương 2: Chuẩn bị Môi trường": 02-prerequisites.md
-  - "Chương 3: Cài đặt Nền tảng": 03-installation.md
-  - "Chương 4: Cấu hình Hệ thống & Tài nguyên": 04-configuration.md
-  - "Chương 5: Vận hành & Bảo trì (Day-2)": 05-operations.md
+      - "Giới thiệu": introduction/introduction.md
+      - "Các khối chức năng chính": introduction/funtional-overview.md
+      - "Các mô hình triển khai": introduction/DeploymentConfigurationsOverview.md
+      - "Các thuật ngữ chính": introduction/BasicTerminology.md
+      - "Cách sử dụng StarlingX": introduction/consuming-starlingx.md
+      - "Tổng hợp về dự án StarlingX": introduction/starlingx-project-overview.md
+      - "Project": introduction/projects.md
+  - Deployment Configuration:
+      - "Các lựa chọn triển khai": deployment-configuration/deployment-options.md
+      - "All-in-One Simplex": deployment-configuration/all-in-one-simplex.md
+      - "All-in-One Duplex": deployment-configuration/all-in-one-duplex.md
+      - "Standard Configuration with Controller Storage": deployment-configuration/standard-controller-storage.md
+      - "standard Configuration with Dedicated Storage": deployment-configuration/standard-dedicated-storage.md
+  - Kế hoạch triển khai nền tảng StarlingX:
+      - "Kubernetes": planning/kubernetes.md
+
