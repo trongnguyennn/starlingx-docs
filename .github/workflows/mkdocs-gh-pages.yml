@@ -6,6 +6,17 @@ on:
       - main
   workflow_dispatch: {}
 
+# Cấp quyền cho GitHub token để thực hiện deploy lên GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Quản lý chạy song song: Hủy các tiến trình cũ nếu có push mới liên tiếp
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -28,12 +39,12 @@ jobs:
         run: mkdocs build
 
       - name: Configure GitHub Pages
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v5
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@v3
         with:
           path: ./site
 
       - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v4
