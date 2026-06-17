@@ -1,0 +1,12 @@
+site_name: StarlingX Documentation
+nav:
+  - Home: index.md
+  - Introduction:
+      - "What is StarlingX": introduction/what-is-starlingx.md
+      - History: introduction/history.md
+      - "Why StarlingX": introduction/why-starlingx.md
+  - "Chương 1: Giới thiệu & Kiến trúc": 01-architecture.md
+  - "Chương 2: Chuẩn bị Môi trường": 02-prerequisites.md
+  - "Chương 3: Cài đặt Nền tảng": 03-installation.md
+  - "Chương 4: Cấu hình Hệ thống & Tài nguyên": 04-configuration.md
+  - "Chương 5: Vận hành & Bảo trì (Day-2)": 05-operations.md
