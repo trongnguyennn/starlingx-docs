@@ -1,7 +1,7 @@
 site_name: StarlingX Documentation
 nav:
   - Home: index.md
-  - Introduction:
+  - Giới thiệu:
       - "Giới thiệu": introduction/introduction.md
       - "Các khối chức năng chính": introduction/funtional-overview.md
       - "Các mô hình triển khai": introduction/DeploymentConfigurationsOverview.md
@@ -9,7 +9,7 @@ nav:
       - "Cách sử dụng StarlingX": introduction/consuming-starlingx.md
       - "Tổng hợp về dự án StarlingX": introduction/starlingx-project-overview.md
       - "Project": introduction/projects.md
-  - Deployment Configuration:
+  - Cấu hình triển khai:
       - "Các lựa chọn triển khai": deployment-configuration/deployment-options.md
       - "All-in-One Simplex": deployment-configuration/all-in-one-simplex.md
       - "All-in-One Duplex": deployment-configuration/all-in-one-duplex.md
@@ -17,4 +17,9 @@ nav:
       - "standard Configuration with Dedicated Storage": deployment-configuration/standard-dedicated-storage.md
   - Kế hoạch triển khai nền tảng StarlingX:
       - "Kubernetes": planning/kubernetes.md
+      - "OpenStack": planning/openstack.md
+  - Cài đặt và cấu hình:
+      - "Tổng quan": installation/overview.md
+      - "Chuẩn bị": installation/prepare.md
+      - "Cài đặt": installation/install-virtualbox.md
 

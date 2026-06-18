@@ -1,10 +1,10 @@
-# Các Tùy Chọn Triển Khai StarlingX (Deployment Options)
+# Các tùy chọn triển khai StarlingX (Deployment Options)
 
 StarlingX hỗ trợ nhiều cấu hình triển khai khác nhau để phù hợp với từng nhu cầu về quy mô, hiệu năng và tính sẵn sàng cao (HA). 
 
 ---
 
-## 1. Bảng so sánh các options triển khai
+## Các options triển khai
 
 | Tùy chọn cấu hình | Số lượng Server chính | Chức năng tích hợp | Khả năng mở rộng (Worker Nodes) | Tính năng Sẵn sàng cao (HA) |
 | :--- | :---: | :--- | :---: | :---: |
