@@ -1,0 +1,361 @@
+# Bootstrap và Cấu hình StarlingX R8.0 (VirtualBox)
+
+## 1. Bootstrap Controller-0
+
+### Đăng nhập lần đầu
+
+```text
+Username: sysadmin
+Password: sysadmin
+```
+
+Hệ thống sẽ yêu cầu đổi mật khẩu.
+
+---
+
+### Cấu hình OAM tạm thời
+
+> Chỉ cần khi controller-0 cần truy cập Internet để bootstrap.
+
+```bash
+export CONTROLLER0_OAM_CIDR=10.10.10.3/24
+export DEFAULT_OAM_GATEWAY=10.10.10.1
+
+sudo ip address add $CONTROLLER0_OAM_CIDR dev enp7s1
+sudo ip link set up dev enp7s1
+sudo ip route add default via $DEFAULT_OAM_GATEWAY dev enp7s1
+```
+
+---
+
+### Tạo file bootstrap
+
+```bash
+cd ~
+
+cat <<EOF > localhost.yml
+system_mode: duplex
+
+dns_servers:
+  - 8.8.8.8
+  - 8.8.4.4
+
+external_oam_subnet: 10.10.10.0/24
+external_oam_gateway_address: 10.10.10.1
+external_oam_floating_address: 10.10.10.2
+external_oam_node_0_address: 10.10.10.3
+external_oam_node_1_address: 10.10.10.4
+
+admin_username: admin
+admin_password: <admin-password>
+ansible_become_pass: <sysadmin-password>
+EOF
+```
+
+---
+
+### Chạy Bootstrap
+
+```bash
+ansible-playbook \
+/usr/share/ansible/stx-ansible/playbooks/bootstrap.yml
+```
+
+Thời gian thực hiện:
+
+```text
+5 - 10 phút
+```
+
+---
+
+## 2. Cấu hình Controller-0
+
+### Nạp môi trường quản trị
+
+```bash
+source /etc/platform/openrc
+```
+
+### Gán OAM và Management Network
+
+```bash
+OAM_IF=enp7s1
+MGMT_IF=enp7s2
+
+system host-if-modify controller-0 lo -c none
+
+IFNET_UUIDS=$(system interface-network-list controller-0 | \
+awk '{if ($6=="lo") print $4;}')
+
+for UUID in $IFNET_UUIDS; do
+    system interface-network-remove ${UUID}
+done
+
+system host-if-modify controller-0 $OAM_IF -c platform
+system interface-network-assign controller-0 $OAM_IF oam
+
+system host-if-modify controller-0 $MGMT_IF -c platform
+system interface-network-assign controller-0 $MGMT_IF mgmt
+system interface-network-assign controller-0 $MGMT_IF cluster-host
+```
+
+---
+
+### Cấu hình NTP
+
+```bash
+system ntp-modify \
+ntpservers=0.pool.ntp.org,1.pool.ntp.org
+```
+
+---
+
+### Kích hoạt Ceph
+
+> Bắt buộc nếu sử dụng Persistent Storage hoặc OpenStack.
+
+```bash
+system storage-backend-add ceph --confirmed
+```
+
+---
+
+### Label OpenStack (nếu triển khai OpenStack)
+
+```bash
+system host-label-assign controller-0 \
+openstack-control-plane=enabled
+```
+
+---
+
+### Unlock Controller-0
+
+```bash
+system host-unlock controller-0
+```
+
+Controller-0 sẽ reboot.
+
+---
+
+## 3. Cài Controller-1
+
+Khởi động VM:
+
+```text
+controller-1
+```
+
+PXE boot từ controller-0.
+
+Kiểm tra:
+
+```bash
+system host-list
+```
+
+Gán role:
+
+```bash
+system host-update 2 personality=controller
+```
+
+---
+
+### Cấu hình Controller-1
+
+```bash
+OAM_IF=enp7s1
+
+system host-if-modify controller-1 $OAM_IF -c platform
+system interface-network-assign controller-1 $OAM_IF oam
+system interface-network-assign controller-1 mgmt0 cluster-host
+```
+
+### Label OpenStack
+
+```bash
+system host-label-assign controller-1 \
+openstack-control-plane=enabled
+```
+
+### Unlock
+
+```bash
+system host-unlock controller-1
+```
+
+---
+
+## 4. Cài Storage Nodes
+
+Khởi động:
+
+```text
+storage-0
+storage-1
+```
+
+Gán role:
+
+```bash
+system host-update 3 personality=storage
+system host-update 4 personality=storage
+```
+
+---
+
+### Gán Cluster Host Network
+
+```bash
+for NODE in storage-0 storage-1; do
+   system interface-network-assign \
+   $NODE mgmt0 cluster-host
+done
+```
+
+---
+
+### Thêm OSD
+
+Storage-0:
+
+```bash
+HOST=storage-0
+DISKS=$(system host-disk-list ${HOST})
+TIERS=$(system storage-tier-list ceph_cluster)
+
+system host-stor-add ...
+```
+
+Storage-1:
+
+```bash
+HOST=storage-1
+DISKS=$(system host-disk-list ${HOST})
+TIERS=$(system storage-tier-list ceph_cluster)
+
+system host-stor-add ...
+```
+
+---
+
+### Unlock Storage
+
+```bash
+for STORAGE in storage-0 storage-1; do
+   system host-unlock $STORAGE
+done
+```
+
+---
+
+## 5. Cài Worker Nodes
+
+Khởi động:
+
+```text
+worker-0
+worker-1
+```
+
+Gán role:
+
+```bash
+system host-update 5 personality=worker hostname=worker-0
+
+system host-update 6 personality=worker hostname=worker-1
+```
+
+---
+
+### Gán Cluster Host Network
+
+```bash
+for NODE in worker-0 worker-1; do
+   system interface-network-assign \
+   $NODE mgmt0 cluster-host
+done
+```
+
+---
+
+### Label OpenStack
+
+```bash
+for NODE in worker-0 worker-1; do
+  system host-label-assign \
+  $NODE openstack-compute-node=enabled
+
+  system host-label-assign \
+  $NODE openvswitch=enabled
+
+  system host-label-assign \
+  $NODE sriov=enabled
+done
+```
+
+---
+
+### Tạo Nova Ephemeral Storage
+
+```bash
+for NODE in worker-0 worker-1; do
+   system host-fs-add ${NODE} instances=10
+done
+```
+
+---
+
+### Unlock Worker
+
+```bash
+for NODE in worker-0 worker-1; do
+   system host-unlock $NODE
+done
+```
+
+---
+
+## 6. Kiểm tra Cluster
+
+```bash
+system host-list
+```
+
+Kỳ vọng:
+
+```text
+controller-0  unlocked-enabled
+controller-1  unlocked-enabled
+storage-0     unlocked-enabled
+storage-1     unlocked-enabled
+worker-0      unlocked-enabled
+worker-1      unlocked-enabled
+```
+
+---
+
+## Mô hình triển khai
+
+```text
+Controller Cluster
+├── controller-0
+└── controller-1
+
+Storage Cluster
+├── storage-0
+└── storage-1
+
+Worker Nodes
+├── worker-0
+└── worker-1
+
+Ceph Cluster
+├── OSD: storage-0
+├── OSD: storage-1
+├── MON: controller-0
+└── MON: controller-1
+```

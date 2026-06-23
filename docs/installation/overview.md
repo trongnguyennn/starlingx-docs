@@ -45,4 +45,15 @@ Nếu triển khai **IPv6**:
 * Một số dịch vụ bên ngoài (Docker Registry...) có thể chỉ hỗ trợ IPv4.
 * Có thể cần triển khai **NAT64/DNS64 Gateway** để chuyển đổi IPv4 ↔ IPv6.
 
+| Server | Role | vCPU | RAM | Disk | Network Interfaces |
+|----------|----------|------|------|------|-------------------|
+| controller-0 | Controller | 4 | 16 GB | Disk1: 240 GB (Root)<br>Disk2: 10 GB (Ceph/PVC) | NIC1: OAM<br>NIC2: Management |
+| controller-1 | Controller | 4 | 16 GB | Disk1: 240 GB (Root)<br>Disk2: 10 GB (Ceph/PVC) | NIC1: OAM<br>NIC2: Management |
+| worker-0 | Worker | 3 | 8 GB | Disk1: 80 GB | NIC1: Unused<br>NIC2: Management<br>NIC3: Data1<br>NIC4: Data2 |
+| worker-1 | Worker | 3 | 8 GB | Disk1: 80 GB | NIC1: Unused<br>NIC2: Management<br>NIC3: Data1<br>NIC4: Data2 |
+| storage-0 | Storage | 1 | 4 GB | Disk1: 80 GB (Root)<br>Disk2: 10 GB (OSD) | NIC1: Unused<br>NIC2: Management |
+| storage-1 | Storage | 1 | 4 GB | Disk1: 80 GB (Root)<br>Disk2: 10 GB (OSD) | NIC1: Unused<br>NIC2: Management |
+
+
+
 

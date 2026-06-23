@@ -1,8 +1,8 @@
-## Chuẩn bị môi trường
+# Chuẩn bị môi trường
 
 Phần này mô tả các bước chuẩn bị máy chủ vật lý và môi trường ảo hóa trước khi triển khai **StarlingX Standard với Dedicated Storage**.
 
-### Yêu cầu về host vật lý
+## Yêu cầu về host vật lý
 
 Máy chủ cài đặt cần đáp ứng tối thiểu:
 
@@ -15,7 +15,7 @@ Máy chủ cài đặt cần đáp ứng tối thiểu:
 | Network    | 1 NIC có kết nối Internet             |
 
 
-### Chuẩn bị máy ảo
+## Chuẩn bị máy ảo
 
 Tạo các máy ảo:
 

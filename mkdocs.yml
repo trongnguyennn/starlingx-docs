@@ -20,6 +20,9 @@ nav:
       - "OpenStack": planning/openstack.md
   - Cài đặt và cấu hình:
       - "Tổng quan": installation/overview.md
-      - "Chuẩn bị": installation/prepare.md
-      - "Cài đặt": installation/install-virtualbox.md
+      - "Chuẩn bị môi trường": installation/prepare.md
+      - "Chuẩn bị cài đặt": installation/install-virtualbox.md
+      - "Cài đặt StarlingX": installation/install-starlingx.md
+      - "Bootstrapping": installation/install-bootstrap.md
+
 

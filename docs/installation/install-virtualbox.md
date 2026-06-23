@@ -207,13 +207,13 @@ Cấu hình mạng cho các VM trong VirtualBox.
 
 #### OAM Network
 
-Có hai lựa chọn cho mạng OAM:
+OAM Network có hai lựa chọn:
 
-##### Option 1: Host-Only Network (Khuyến nghị)
+##### Host-Only Network (Khuyến nghị)
 
-* Tạo Host-Only Adapter trong VirtualBox.
-* Controller truy cập mạng ngoài thông qua Router VM.
-* Cấu hình:
+* Tạo một Host-Only Adapter trong VirtualBox.
+* Router VM sẽ chuyển tiếp lưu lượng từ Controller ra mạng ngoài.
+* Cấu hình mặc định:
 
 | Tham số      | Giá trị       |
 | ------------ | ------------- |
@@ -221,18 +221,28 @@ Có hai lựa chọn cho mạng OAM:
 | Netmask      | 255.255.255.0 |
 | DHCP Server  | Disabled      |
 
-##### Option 2: NAT Network
+##### NAT Network
 
-* Cho phép Controller truy cập Internet trực tiếp thông qua NAT của VirtualBox.
+* Cho phép Controller VM truy cập mạng ngoài trực tiếp thông qua NAT của VirtualBox.
 
 ---
 
 #### Controller Nodes
 
-| Adapter   | Cấu hình                              |
-| --------- | ------------------------------------- |
-| Adapter 1 | Host-Only hoặc NAT Network (OAM)      |
-| Adapter 2 | Internal Network: `intnet-management` |
+| Adapter   | Cấu hình                                 |
+| --------- | ---------------------------------------- |
+| Adapter 1 | Host-Only Adapter hoặc NAT Network (OAM) |
+| Adapter 2 | Internal Network: `intnet-management`    |
+
+Lưu ý:
+
+* Adapter Type: Intel PRO/1000MT Desktop
+* Promiscuous Mode:
+
+  * Adapter 1: Deny
+  * Adapter 2: Allow All
+
+---
 
 #### Worker Nodes
 
@@ -245,8 +255,20 @@ Có hai lựa chọn cho mạng OAM:
 
 Lưu ý:
 
-* Promiscuous Mode: **Allow All**
+* Tất cả adapter sử dụng Promiscuous Mode = Allow All.
 * Có thể bổ sung NIC để mô phỏng LAG.
+
+Ví dụ thêm NIC bằng VBoxManage:
+
+```bash
+VBoxManage modifyvm worker-0 --nic5 intnet --nictype5 virtio --intnet5 intnet-data1 --nicpromisc5 allow-all
+
+VBoxManage modifyvm worker-0 --nic6 intnet --nictype6 virtio --intnet6 intnet-data2 --nicpromisc6 allow-all
+
+VBoxManage modifyvm worker-0 --nic7 intnet --nictype7 82540EM --intnet7 intnet-infra --nicpromisc7 allow-all
+```
+
+---
 
 #### Storage Nodes
 
@@ -255,11 +277,18 @@ Lưu ý:
 | Adapter 1 | `intnet-unused`     |
 | Adapter 2 | `intnet-management` |
 
+Lưu ý:
+
+* Adapter Type: Intel PRO/1000MT Desktop
+* Promiscuous Mode: Allow All
+
 ---
 
-#### Boot Priority
+#### PXE Boot Priority
 
-Tất cả các VM (Controller, Worker, Storage) phải cấu hình PXE Boot trên Interface 2:
+Tất cả VM (Controller, Worker, Storage) phải PXE Boot từ Interface 2 (`eth1`).
+
+Cấu hình:
 
 ```bash
 VBoxManage modifyvm <vm-name> --nicbootprio2 1
@@ -271,28 +300,210 @@ Ví dụ:
 VBoxManage modifyvm controller-0 --nicbootprio2 1
 ```
 
-Điều này cho phép các node:
-
-* PXE Boot từ Controller.
-* Tự động cài đặt hệ điều hành qua mạng.
-
 ---
 
-#### Debug PXE Boot
+#### PXE Boot Debug
 
 Nếu PXE Boot không hoạt động:
 
 1. Khởi động VM.
-2. Nhấn `F12`.
-3. Chọn `LAN Boot`.
-4. Nhấn `Ctrl+B` để vào iPXE CLI.
+2. Nhấn `F12` để vào Boot Menu.
+3. Chọn `L` (LAN Boot).
+4. Nhấn `Ctrl + B` để vào iPXE CLI.
 
-Lệnh:
+Chạy lệnh:
 
 ```text
 autoboot
 ```
-sẽ kiểm tra từng interface và thử thực hiện Network Boot.
+
+Lệnh này sẽ kiểm tra từng interface và thử thực hiện Network Boot.
+### Serial Port Settings
+
+Nếu muốn sử dụng **Serial Console**, cần bật Serial Port trên VM trước khi cài đặt StarlingX.
+
+#### Windows
+
+Cấu hình:
+
+* Enable Serial Port
+* Port Mode: **Host Pipe**
+* Chọn **Create Pipe**
+* Port/File Path:
+
+```text
+\\.\pipe\controller-0
+```
+
+hoặc
+
+```text
+\\.\pipe\worker-1
+```
+
+Sau đó có thể sử dụng **PuTTY** để kết nối vào Serial Console.
+
+Tốc độ khuyến nghị:
+
+* 9600
+* 38400
+
+---
+
+#### Linux
+
+Cấu hình:
+
+* Enable Serial Port
+* Port Mode: **Host Pipe**
+* Chọn **Create Pipe**
+* Port/File Path:
+
+```text
+/tmp/controller_serial
+```
+
+Kết nối Serial Console bằng:
+
+```bash
+socat UNIX-CONNECT:/tmp/controller_serial stdio,raw,echo=0,icanon=0
+```
+---
+
+### Tóm tắt
+
+| Thành phần     | Cấu hình  |
+| -------------- | --------- |
+| Serial Console | Host Pipe |
+| Windows Client | PuTTY     |
+| Linux Client   | socat     |
+| Dell R720      | EnableHVP |
+
+
+
+## Khởi tạo Controller VM và boot hệ thống
+
+Khởi động **controller-0** và chọn chế độ cài đặt phù hợp.
+
+### Console Options
+
+#### Serial Console
+
+Chọn:
+
+```text
+Serial Controller Node Install
+```
+
+Sau đó kết nối qua Serial Console đã cấu hình trước đó.
+
+#### Graphical Console
+
+Chọn:
+
+```text
+Graphics Controller Node Install
+```
+
+và tiếp tục thao tác trên giao diện VirtualBox Console.
+
+---
+
+### Boot các node còn lại
+
+Đối với:
+
+* AIO-DX
+* Standard Configuration
+
+Các node còn lại:
+
+* controller-1
+* worker
+* storage
+
+sẽ không boot từ ISO mà boot qua mạng từ **controller-0**.
+
+Thao tác:
+
+1. Khởi động VM.
+2. Nhấn `F12`.
+3. Chọn `LAN Boot`.
+
+---
+
+### Cấu hình các tham số cài đặt
+
+StarlingX cho phép tùy chỉnh một số tham số cài đặt.
+
+| Tham số        | Mô tả                                |
+| -------------- | ------------------------------------ |
+| boot_device    | Thiết bị chứa phân vùng boot         |
+| rootfs_device  | Thiết bị chứa root filesystem        |
+| install_output | Chế độ cài đặt (text hoặc graphical) |
+| console        | Cấu hình serial console              |
+
+#### Giá trị mặc định
+
+| Tham số        | Mặc định     |
+| -------------- | ------------ |
+| boot_device    | sda          |
+| rootfs_device  | sda          |
+| install_output | text         |
+| console        | ttyS0,115200 |
+
+---
+
+#### Cài đặt tùy chỉnh Controller-0 từ ISO
+![Controller-0 from ISO](../images/controller0-custom-iso.png)
+
+Để thay đổi tham số cài đặt:
+
+1. Tại màn hình boot menu.
+2. Chọn mục cài đặt mong muốn.
+3. Nhấn `Tab`.
+4. Chỉnh sửa các tham số boot.
+
+Ví dụ:
+
+```text
+rootfs_device=sdb
+```
+
+---
+
+#### Cài đặt Nodes từ Active Controller
+
+Sau khi controller-0 hoạt động, có thể thay đổi tham số cài đặt của các node bằng CLI.
+
+##### Cài đặt giao diện đồ họa
+
+```bash
+system host-update 2 personality=controller install_output=graphical console=
+```
+
+##### Cài đặt dạng text
+
+```bash
+system host-update 2 personality=controller install_output=text console=
+```
+
+##### Cài đặt lên ổ đĩa thứ hai
+
+```bash
+system host-update 3 personality=compute hostname=compute-0 rootfs_device=sdb
+```
+
+Các tham số này cũng có thể được cấu hình từ giao diện GUI thông qua chức năng **Edit Host**.
+![Edit host](../images/edit-host.png)
+
+### Lưu ý
+
+* Đảm bảo đã cấu hình PXE Boot Priority cho tất cả VM.
+* Controller-0 luôn được cài từ ISO hoặc USB.
+* Các node còn lại được cài đặt thông qua PXE Boot từ controller-0.
+
+
 
 
 

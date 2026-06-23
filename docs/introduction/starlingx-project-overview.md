@@ -4,8 +4,8 @@
 ---
 
 ## Các điểm chính của Dự án
-
-* **Dự án cấp cao của Open Infrastructure Foundation:** StarlingX là một dự án trọng điểm (Top-level project) được bảo trợ và phát triển bởi tổ chức Open Infrastructure Foundation (OIF).
+* **Mã nguồn ban đầu:** Dự án bắt nguồn từ mã nguồn của sản phẩm **Titanium Cloud** từ Wind River, public năm 2018.
+* **Dự án của Open Infrastructure Foundation:** StarlingX là một dự án trọng điểm (Top-level project) được bảo trợ và phát triển bởi tổ chức Open Infrastructure Foundation (OIF).
 * **Kiến trúc phần mềm quản lý toàn diện:** Đây là một tập hợp các tầng phần mềm (software stack) cung cấp giải pháp quản lý hạ tầng và dịch vụ trọng yếu cho cả các ứng dụng đám mây tập trung (centralized) lẫn đám mây phân tán (distributed).
 * **Chu kỳ phát hành thường xuyên:** Dự án liên tục cập nhật và ra mắt các phiên bản mới (Frequent releases) để cải tiến tính năng và hiệu suất.
 * **Cộng đồng đang trên đà phát triển:** Dự án ghi nhận sự tăng trưởng mạnh mẽ về số lượng thành viên tham gia.
