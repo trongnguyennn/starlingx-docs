@@ -159,7 +159,7 @@ system host-list
 Gán role:
 
 ```bash
-system host-update 2 personality=controller
+system host-update 2 personality=controller install_output=graphical console=
 ```
 
 ---
@@ -201,8 +201,8 @@ storage-1
 Gán role:
 
 ```bash
-system host-update 3 personality=storage
-system host-update 4 personality=storage
+system host-update 3 personality=storage install_output=graphical console=
+system host-update 4 personality=storage install_output=graphical console=
 ```
 
 ---
@@ -264,9 +264,9 @@ worker-1
 Gán role:
 
 ```bash
-system host-update 5 personality=worker hostname=worker-0
+system host-update 5 personality=worker hostname=worker-0 install_output=graphical console=
 
-system host-update 6 personality=worker hostname=worker-1
+system host-update 6 personality=worker hostname=worker-1 install_output=graphical console=
 ```
 
 ---
@@ -358,4 +358,154 @@ Ceph Cluster
 ├── OSD: storage-1
 ├── MON: controller-0
 └── MON: controller-1
+```
+
+## 7. Lưu ý
+### Lỗi Kubernetes OOM do kubepods bị giới hạn 500Mi
+Triệu chứng
+```bash
+kubectl get pods -A
+```
+Bị timeout: Unable to connect to the server: TLS handshake timeout
+
+Các pod restart liên tục:
+```text
+calico-node
+calico-kube-controllers
+coredns
+cert-manager
+dex
+flux source-controller
+helm-controller
+```
+Kiểm tra
+```bash
+sudo dmesg -T | egrep -i "oom|killed|memory|disk|error|fail" | tail -50
+sudo crictl inspect <container-id> | grep -i -A5 -B5 "reason\|exitCode\|message"
+```
+Kernel log:
+```text
+Memory cgroup out of memory
+Killed process coredns
+Killed process cainjector
+Killed process dex
+```
+Kiểm tra
+```bash
+cat /sys/fs/cgroup/memory/k8s-infra-stx/kubepods/memory.limit_in_bytes
+```
+Kết quả:
+```text
+524288000
+```
+Tương đương: 500 MiB
+
+Trong khi host có:
+```bash
+free -h
+13Gi RAM
+```
+Root Cause
+Cgroup: /k8s-infra-stx/kubepods bị giới hạn: 500Mi
+Toàn bộ workload Kubernetes phải dùng chung 500Mi RAM.
+
+Dẫn đến:
+
+OOM
+↓
+Calico crash
+↓
+CoreDNS crash
+↓
+API timeout
+↓
+Controller-1 không join được
+
+Workaround
+
+Tăng tạm giới hạn:
+```bash
+echo 8589934592 > \
+/sys/fs/cgroup/memory/k8s-infra-stx/kubepods/memory.limit_in_bytes
+
+echo 8589934592 | sudo tee /sys/fs/cgroup/memory/k8s-infra-stx/kubepods/memory.limit_in_bytes
+```
+Kiểm tra:
+```bash
+cat /sys/fs/cgroup/memory/k8s-infra-stx/kubepods/memory.limit_in_bytes
+8589934592
+```
+Sau đó các pod hồi phục:
+```bash
+kubectl get pods -A
+```
+Lưu ý: Sau reboot cần kiểm tra lại:
+```bash
+cat /sys/fs/cgroup/memory/k8s-infra-stx/kubepods/memory.limit_in_bytes
+```
+Nếu quay về: 524288000 thì cần điều tra service hoặc cấu hình StarlingX đang ghi đè giá trị này.
+
+### Lỗi cấu hình mạng
+```bash
+sudo grep server /etc/cni/net.d/calico-kubeconfig
+```
+Kết quả
+```text
+    server: https://[10.96.0.1]:443
+```
+Sửa lại
+```bash
+sudo sed -i 's#https://\[10\.96\.0\.1\]:443#https://10.96.0.1:443#g' /etc/cni/net.d/calico-kubeconfig
+sudo systemctl restart kubelet
+```
+Kiểm tra lại:
+```bash
+sudo grep server /etc/cni/net.d/calico-kubeconfig
+```
+
+Phải thành:
+```text
+server: https://10.96.0.1:443
+```
+### Lỗi filesystem /usr đang mount read-only, nên sed -i không tạo được file tạm trong cùng thư mục.
+Kiểm tra mount
+```bash
+mount | grep ' /usr '
+```
+Remount /usr thành read-write
+```bash
+sudo mount -o remount,rw /usr
+```
+
+### Lỗi pull image khi bootstap
+Kiểm tra:
+```bash
+grep -R "kubernetes-entrypoint" \
+/usr/share/ansible/stx-ansible/playbooks/roles/common/load-images-information/vars/
+```
+Xử lý:
+```bash
+sudo find /usr/share/ansible/stx-ansible/playbooks/roles/common/load-images-information/vars \
+-name system-images.yml \
+-exec sed -i \
+'s#quay.io/stackanetes/kubernetes-entrypoint:v0.3.1#quay.io/airshipit/kubernetes-entrypoint:latest-ubuntu_focal#g' {} \;
+```
+
+### Lỗi node bị degraded do colectd
+Thực hiện lệnh
+```bash
+sudo systemctl status systemd-journald
+sudo ls -l /var/log/collectd.log /var/log/daemon.log /var/log/syslog 2>/dev/null
+sudo grep -i collectd /var/log/daemon.log /var/log/syslog /var/log/collectd.log 2>/dev/null | tail -100
+```
+
+```bash
+sudo cp /etc/systemd/system/collectd.service /etc/systemd/system/collectd.service.bak.$(date +%F_%H%M)
+
+sudo sed -i 's/^Type=notify/Type=simple/' /etc/systemd/system/collectd.service
+
+sudo systemctl daemon-reload
+sudo systemctl reset-failed collectd
+sudo systemctl restart collectd
+sudo systemctl status collectd
 ```

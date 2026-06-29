@@ -24,5 +24,7 @@ nav:
       - "Chuẩn bị cài đặt": installation/install-virtualbox.md
       - "Cài đặt StarlingX": installation/install-starlingx.md
       - "Bootstrapping": installation/install-bootstrap.md
+      - "Tạo máy ảo": installation/create-vm.md
+      - "Cài đặt StarlingX OpenStack": installation/install-stx-openstack.md
 
 
