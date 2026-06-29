@@ -10,6 +10,7 @@ nav:
       - "Tổng hợp về dự án StarlingX": introduction/starlingx-project-overview.md
       - "Project": introduction/projects.md
   - Cấu hình triển khai:
+      - "Các thành phần chung": deployment-configuration/common-components.md
       - "Các lựa chọn triển khai": deployment-configuration/deployment-options.md
       - "All-in-One Simplex": deployment-configuration/all-in-one-simplex.md
       - "All-in-One Duplex": deployment-configuration/all-in-one-duplex.md
